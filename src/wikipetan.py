@@ -78,6 +78,11 @@ def summarize(content):
         return first_sentence[:-1]+'ました。'
     elif last_word.detail=='助数':
         return first_sentence+'です。'
+    elif last_word.pos=='動詞' and last_word.conjugation=='基本形':
+        if last_word.detail=='ラ五ある':
+            return first_sentence[:-2]+'す。'
+    elif last_word.pos=='接尾辞':
+        return first_sentence+'です。'
     
     return first_sentence
 
