@@ -7,15 +7,15 @@ from xml.parsers import expat
 
 class YahooMA(object):
 
-    def __init__(self, appKey):
-        self.appKey = appKey
+    def __init__(self, app_key):
+        self.app_key = app_key
 
     def analyze(self, string):
         http = httplib2.Http()
-        xmlParser = _YahooMAParser()
-        options = {'appid': self.appKey, 'sentence': string, 'response': 'feature', 'results': 'ma'}
+        xml_parser = _YahooMAParser()
+        options = {'appid': self.app_key, 'sentence': string, 'response': 'feature', 'results': 'ma'}
         headers, body = http.request('http://jlp.yahooapis.jp/MAService/V1/parse?'+urlencode(options))
-        return xmlParser.getWordList(body.decode('utf-8'))
+        return xml_parser.get_word_list(body.decode('utf-8'))
 
 class _YahooMAParser(object):
 
@@ -30,33 +30,33 @@ class _YahooMAParser(object):
 
 
     #for xml parser call back
-    def _startElement(self, name, attr):
+    def _start_element(self, name, attr):
         if name=='word':
             self.currentWord = ''
         self.currentTag = name
 
     #for xml parser call back
-    def _endElement(self, name):
+    def _end_element(self, name):
         if name=='word':
             word = Word()
-            word.setData(self.currentWord)  #TODO currentWord>currentWordFeature
+            word.set_data(self.currentWord)  #TODO currentWord>currentWordFeature
             self.result.append(word)
             self.currentWord = None
             
     #for xml parser call back
-    def _charData(self, data):
+    def _char_data(self, data):
         if self.currentWord!=None:
             if self.currentTag=='feature':
                 self.currentWord += data
         return
 
-    def getWordList(self, xml):
+    def get_word_list(self, xml):
         self.body=''
         parser = expat.ParserCreate('utf-8')
         parser.buffer_text = True
-        parser.StartElementHandler = self._startElement
-        parser.EndElementHandler = self._endElement
-        parser.CharacterDataHandler = self._charData
+        parser.StartElementHandler = self._start_element
+        parser.EndElementHandler = self._end_element
+        parser.CharacterDataHandler = self._char_data
         parser.Parse(xml, True)
         ret = self.result
         self._clear()
@@ -64,7 +64,7 @@ class _YahooMAParser(object):
 
 
 class Word(object):
-    _commaSplitPattern = re.compile(',')
+    comma_pattern = re.compile(',')
     
     def __init__(self):
         self.pos = ''          #品詞
@@ -88,8 +88,8 @@ class Word(object):
         self.baseform=None if self.baseform=='*' else self.baseform
         return
 
-    def setData(self, feature):
-        features = Word._commaSplitPattern.split(feature)
+    def set_data(self, feature):
+        features = Word.comma_pattern.split(feature)
         self.pos = features[0]
         self.detail = features[1]
         self.conjugation = features[2]

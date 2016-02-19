@@ -1,100 +1,99 @@
-# coding: utf-8
 import httplib2
 import re
 from urllib.parse import quote,unquote
 from xml.parsers import expat
 
-_htmlTagPattern = re.compile(r'<.*?>')
-_htmlRefTagPattern = re.compile(r'<[Rr][Ee][Ff](\s+[^>]*|\s*)[^/]>.*?</[Rr][Ee][Ff]\s*>')
-_htmlGalleryTagPattern = re.compile(r'<[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>.*?</[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>')
-_lineheadPattern = re.compile(r'^(:| |----+|\*(\*|#)*|#(\*|#)*|;+|=[^=]+=|==[^=]+==|===[^=]+===|====[^=]+====)',re.MULTILINE)
-_wikiFilePattern = re.compile(r'\[\[(ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]):([^\|]*?)\]\]')
-_wikiFileOptionPattern = re.compile(r'\[\[(ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]):([^\|]*?)\|(([^\[]|\[[^\[])*?)\]\]')
-_wikilinkPattern = re.compile(r'\[\[(?!ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee])([^|]*?)\]\]')
-_wikilinkAliasPattern = re.compile(r'\[\[(?!ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]).*?\|(([^\|]|[^\[]|\[[^\[])*?)\]\]')
-_outerlinkPattern = re.compile(r'\[(.*?)\]')
-_outerlinkAliasPattern = re.compile(r'\[\S*?[ \t]+(.*?)\]')
-_templateLangPattern = re.compile(r'\{\{\s*([Rr]tl-)?[Ll]ang\s*\|[^|]+\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
-_templateLangLabelPattern = re.compile(r'\{\{\s*?([Ll]ang-[^|]+|[Aa]r|[Cc]s|[Dd]e|[Ee]l|[Ee]n|[Ee]s|[Ff]r|[Hh]u|[Ii]t|[Kk]o|[Ll]a|[Mm]y|[Nn]l|[Pp]t|[Rr]u|[Zz]h(-tw)?|[Ss]namei?)\s*\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
-_templatePattern = re.compile(r'\{\{([^\{]|\{[^\{])*?([^\{]\{)?\}\}',re.MULTILINE)
-_tablePattern = re.compile(r'^\{\|.*?^\|\}',re.MULTILINE|re.DOTALL)
-_boldPattern = re.compile(r"'''(.+?)'''")
-_italicPattern = re.compile(r"''(.+?)''")
-_strayBoldPattern = re.compile(r"'''")
-_strayItalicPattern = re.compile(r"''")
+_HTML_TAG_PATTERN = re.compile(r'<.*?>')
+_HTML_REF_TAG_PATTERN = re.compile(r'<[Rr][Ee][Ff](\s+[^>]*|\s*)[^/]>.*?</[Rr][Ee][Ff]\s*>')
+_HTML_GALLERY_TAG_PATTERN = re.compile(r'<[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>.*?</[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>')
+_LINE_HEAD_PATTERN = re.compile(r'^(:| |----+|\*(\*|#)*|#(\*|#)*|;+|=[^=]+=|==[^=]+==|===[^=]+===|====[^=]+====)',re.MULTILINE)
+_WIKI_FILE_PATTERN = re.compile(r'\[\[(ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]):([^\|]*?)\]\]')
+_WIKI_FILE_OPTION_PATTERN = re.compile(r'\[\[(ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]):([^\|]*?)\|(([^\[]|\[[^\[])*?)\]\]')
+_WIKI_LINK_PATTERN = re.compile(r'\[\[(?!ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee])([^|]*?)\]\]')
+_WIKI_LINK_ALIAS_PATTERN = re.compile(r'\[\[(?!ファイル|画像|[Ff][Ii][Ll][Ee]|[Ii][Mm][Aa][Gg][Ee]).*?\|(([^\|]|[^\[]|\[[^\[])*?)\]\]')
+_OUTER_LINK_PATTERN = re.compile(r'\[(.*?)\]')
+_OUTER_LINK_ALIAS_PATTERN = re.compile(r'\[\S*?[ \t]+(.*?)\]')
+_TEMPLATE_LANG_PATTERN = re.compile(r'\{\{\s*([Rr]tl-)?[Ll]ang\s*\|[^|]+\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
+_TEMPLATE_LANG_LABEL_PATTERN = re.compile(r'\{\{\s*?([Ll]ang-[^|]+|[Aa]r|[Cc]s|[Dd]e|[Ee]l|[Ee]n|[Ee]s|[Ff]r|[Hh]u|[Ii]t|[Kk]o|[Ll]a|[Mm]y|[Nn]l|[Pp]t|[Rr]u|[Zz]h(-tw)?|[Ss]namei?)\s*\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
+_TEMPLATE_PATTERN = re.compile(r'\{\{([^\{]|\{[^\{])*?([^\{]\{)?\}\}',re.MULTILINE)
+_TABLE_PATTERN = re.compile(r'^\{\|.*?^\|\}',re.MULTILINE|re.DOTALL)
+_BOLD_PATTERN = re.compile(r"'''(.+?)'''")
+_ITALIC_PATTERN = re.compile(r"''(.+?)''")
+_STRAY_BOLD_PATTERN = re.compile(r"'''")
+_STRAY_ITALIC_PATTERN = re.compile(r"''")
 
-def _getContentWiki(url):
+def _get_content_wiki(url):
     http = httplib2.Http()
     content = http.request(url)[1];
-    return _XmlParser().deriveWiki(content.decode('utf-8'))
+    return _XmlParser().derive_wiki(content.decode('utf-8'))
     
-def getContentWiki(itemName):
-    return _getContentWiki('http:' + quote('//ja.wikipedia.org/wiki/特別:データ書き出し/') + quote(itemName, ''))
+def get_content_wiki(item_name):
+    return _get_content_wiki('http:' + quote('//ja.wikipedia.org/wiki/特別:データ書き出し/') + quote(item_name, ''))
 
-def getRandomContentWiki():
+def get_random_content_wiki():
     http = httplib2.Http()
     http.follow_redirects = False
-    randomUrl = 'https:' + quote('//ja.wikipedia.org/wiki/特別:おまかせ表示/')
-    articleUrl = http.request(randomUrl)[0]['location'] # status:302 should be returned.
-    itemName = unquote(articleUrl.split('/')[-1])
-    return (itemName, getContentWiki(itemName))
+    random_url = 'https:' + quote('//ja.wikipedia.org/wiki/特別:おまかせ表示/')
+    article_url = http.request(random_url)[0]['location'] # status:302 should be returned.
+    item_name = unquote(article_url.split('/')[-1])
+    return (item_name, get_content_wiki(item_name))
 
-def getArticleUrl(itemName):
-    return 'https://ja.wikipedia.org/wiki/' + quote(itemName)
+def get_article_url(item_name):
+    return 'https://ja.wikipedia.org/wiki/' + quote(item_name)
     
-def stripWikiNotation(data):
-    tmp = _stripHtmlTags(data)
-    tmp = _stripHeadPattern(tmp)
-    tmp = _stripLink(tmp)
-    tmp = _stripTemplate(tmp)
-    tmp = _stripTable(tmp)
-    tmp = _stripItalicBold(tmp)
-    tmp = _stripNewline(tmp)
+def strip_wiki_notation(data):
+    tmp = _strip_html_tags(data)
+    tmp = _strip_head_pattern(tmp)
+    tmp = _strip_link(tmp)
+    tmp = _strip_template(tmp)
+    tmp = _strip_table(tmp)
+    tmp = _strip_italic_bold(tmp)
+    tmp = _strip_new_line(tmp)
     return tmp
 
-def _stripHtmlTags(data):
-    data = _htmlRefTagPattern.sub('', data)
-    data = _htmlGalleryTagPattern.sub('', data)
-    return _htmlTagPattern.sub('', data)    #簡易タグ除去
+def _strip_html_tags(data):
+    data = _HTML_REF_TAG_PATTERN.sub('', data)
+    data = _HTML_GALLERY_TAG_PATTERN.sub('', data)
+    return _HTML_TAG_PATTERN.sub('', data)    #簡易タグ除去
 
-def _stripHeadPattern(data):
-    return _lineheadPattern.sub('', data)
+def _strip_head_pattern(data):
+    return _LINE_HEAD_PATTERN.sub('', data)
 
-def _stripLink(data):
+def _strip_link(data):
     tmp = data
     while True:
         prev = tmp
-        tmp = _wikiFilePattern.sub('', tmp)
-        tmp = _wikiFileOptionPattern.sub('', tmp)
-        tmp = _wikilinkPattern.sub(r'\1', tmp)
-        tmp = _wikilinkAliasPattern.sub(r'\1', tmp)
+        tmp = _WIKI_FILE_PATTERN.sub('', tmp)
+        tmp = _WIKI_FILE_OPTION_PATTERN.sub('', tmp)
+        tmp = _WIKI_LINK_PATTERN.sub(r'\1', tmp)
+        tmp = _WIKI_LINK_ALIAS_PATTERN.sub(r'\1', tmp)
         if prev == tmp:
             break
-    tmp = _outerlinkAliasPattern.sub(r'\1', tmp)
-    tmp = _outerlinkPattern.sub(r'\1', tmp)
+    tmp = _OUTER_LINK_ALIAS_PATTERN.sub(r'\1', tmp)
+    tmp = _OUTER_LINK_PATTERN.sub(r'\1', tmp)
     return tmp
 
-def _stripTemplate(data):
-    stripped = _templateLangPattern.sub(r'\2', data)
-    stripped = _templateLangLabelPattern.sub(r'\3', stripped)
+def _strip_template(data):
+    stripped = _TEMPLATE_LANG_PATTERN.sub(r'\2', data)
+    stripped = _TEMPLATE_LANG_LABEL_PATTERN.sub(r'\3', stripped)
     while True:
         raw = stripped
-        stripped = _templatePattern.sub('', raw)
+        stripped = _TEMPLATE_PATTERN.sub('', raw)
         if raw == stripped:
             break
     return stripped
 
-def _stripTable(data):
-    return _tablePattern.sub('', data)
+def _strip_table(data):
+    return _TABLE_PATTERN.sub('', data)
 
-def _stripItalicBold(data):
-    tmp = _boldPattern.sub(r'\1', data)
-    tmp = _italicPattern.sub(r'\1', tmp)
-    tmp = _strayBoldPattern.sub(r'', tmp)
-    tmp = _strayItalicPattern.sub(r'', tmp)
+def _strip_italic_bold(data):
+    tmp = _BOLD_PATTERN.sub(r'\1', data)
+    tmp = _ITALIC_PATTERN.sub(r'\1', tmp)
+    tmp = _STRAY_BOLD_PATTERN.sub(r'', tmp)
+    tmp = _STRAY_ITALIC_PATTERN.sub(r'', tmp)
     return tmp
 
-def _stripNewline(data):
+def _strip_new_line(data):
     data = data.replace('\n','')
     data = data.replace('\r','')
     return data
@@ -109,27 +108,27 @@ class _XmlParser(object):
         pass
     
     #for xml parser call back
-    def _startElement(self, name, attr):
+    def _start_element(self, name, attr):
         if name=='text':
-            self.bodyStarted = True
+            self.body_started = True
 
     #for xml parser call back
-    def _endElement(self, name):
+    def _end_element(self, name):
         if name=='text':
-            self.bodyStarted = False
+            self.body_started = False
             
     #for xml parser call back
     def _charData(self, data):
-        if self.bodyStarted:
+        if self.body_started:
             self.body+=data
 
-    def deriveWiki(self, xml):
+    def derive_wiki(self, xml):
         self.body=''
-        self.bodyStarted = False
+        self.body_started = False
         parser = expat.ParserCreate()
         parser.buffer_text = True
-        parser.StartElementHandler = self._startElement
-        parser.EndElementHandler = self._endElement
+        parser.StartElementHandler = self._start_element
+        parser.EndElementHandler = self._end_element
         parser.CharacterDataHandler = self._charData
         parser.Parse(xml, True)
         return self.body

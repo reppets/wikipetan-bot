@@ -18,7 +18,7 @@ tweeter = twitter.Tweeter(
     setting.twitter_user_key,
     setting.twitter_user_secret)
 
-yahooMA = yahoo.YahooMA(setting.yahoo_app_key)
+yahoo_ma = yahoo.YahooMA(setting.yahoo_app_key)
 
 verbose = False
 
@@ -35,13 +35,11 @@ def main():
     global verbose
     verbose = args.v
     if args.type =="random":
-        content = randomTweet(args.p)
+        content = random_tweet(args.p)
     elif args.type=="midnight":
-        content = midnightTweet(args.p)
+        content = midnight_tweet(args.p)
     elif args.type=="noon":
-        content = noonTweet(args.p)
-    elif args.type=="featured":
-        content = featuredTweet(args.p)
+        content = noon_tweet(args.p)
     else:
         raise Exception('unexpected type')
 
@@ -51,55 +49,55 @@ def main():
         tweeter.tweet(content)
 
 def summarize(content):
-    firstSentence = content.split('。',1)[0]
-    analyzed = yahooMA.analyze(firstSentence)
+    first_sentence = content.split('。',1)[0]
+    analyzed = yahoo_ma.analyze(first_sentence)
     if verbose:
         print("YahooMA:"+str(analyzed))
-    lastWord = analyzed[-1]
+    last_word = analyzed[-1]
     skeleton = [word.surface for word in analyzed]
     done = False
-    if lastWord.detail=='括弧閉':
+    if last_word.detail=='括弧閉':
         for word in reversed(analyzed[:-1]):
             if word.detail=='括弧開':
                 done = True
                 continue
             if done:
-                lastWord = word
+                last_word = word
                 break
-    if lastWord.pos=='名詞':
-        return firstSentence+'です。'
-    elif lastWord.detail=='助動詞だ':
-        return firstSentence[:-1]+'です。'
-    elif lastWord.detail=='助動詞ある' and analyzed[-2]:
-        return firstSentence[:-3]+'です。'
-    elif lastWord.detail=='助動詞一段':
-        return firstSentence[:-1]+'ます。'
-    elif lastWord.detail=='助動詞する':
-        return firstSentence[:-2]+'します。'
-    elif lastWord.detail=='助動詞た':
-        return firstSentence[:-1]+'ました。'
-    elif lastWord.detail=='助数':
-        return firstSentence+'です。'
+    if last_word.pos=='名詞':
+        return first_sentence+'です。'
+    elif last_word.detail=='助動詞だ':
+        return first_sentence[:-1]+'です。'
+    elif last_word.detail=='助動詞ある' and analyzed[-2]:
+        return first_sentence[:-3]+'です。'
+    elif last_word.detail=='助動詞一段':
+        return first_sentence[:-1]+'ます。'
+    elif last_word.detail=='助動詞する':
+        return first_sentence[:-2]+'します。'
+    elif last_word.detail=='助動詞た':
+        return first_sentence[:-1]+'ました。'
+    elif last_word.detail=='助数':
+        return first_sentence+'です。'
     
-    return firstSentence
+    return first_sentence
 
 
 
-def summarizeToday(event, year=None):
+def summarize_today(event, year=None):
     paren_match = re.search(r'[(（][^(]*[)）]$',event)
     if paren_match:
         event = event[:paren_match.start()]
-    wordlist = yahooMA.analyze(event)
+    word_list = yahoo_ma.analyze(event)
     if verbose:
-        print("YahooMA:"+str(wordlist))
-    lastDetail = wordlist[-1].detail
+        print("YahooMA:"+str(word_list))
+    last_detail = word_list[-1].detail
     skeleton = None
-    if lastDetail=='名サ他':
-        skeleton = [word.surface for word in wordlist]
-        if wordlist[-2].pos == '名詞':
+    if last_detail=='名サ他':
+        skeleton = [word.surface for word in word_list]
+        if word_list[-2].pos == '名詞':
             skeleton.insert(-1, 'が')
             skeleton.append('された日です。')
-        for word in reversed(wordlist[:-1]):
+        for word in reversed(word_list[:-1]):
             if word.detail == '格助詞':
                 if word.surface in ['を','に','へ']:
                     skeleton.append('した日です。')
@@ -107,27 +105,27 @@ def summarizeToday(event, year=None):
                 elif word.surface=='が':
                     skeleton.append('された日です。')
                     break
-    elif lastDetail=='名サ自':
-        skeleton = [word.surface for word in wordlist]
+    elif last_detail=='名サ自':
+        skeleton = [word.surface for word in word_list]
         skeleton.append('した日です。')
-        if len(wordlist) >= 2 and wordlist[-2].pos=='名詞':
+        if len(word_list) >= 2 and word_list[-2].pos=='名詞':
             skeleton.insert(-2,'が')
-    elif lastDetail=='名詞' or (wordlist[-1].pos=='動詞' and wordlist[-1].conjugation=='連用形'):
-        skeleton = [word.surface for word in wordlist]
+    elif last_detail=='名詞' or (word_list[-1].pos=='動詞' and word_list[-1].conjugation=='連用形'):
+        skeleton = [word.surface for word in word_list]
         if year:
             skeleton.append('があった日です。')
         else:
             skeleton.append('です!')
-    elif wordlist[-1].pos=='動詞' and wordlist[-1].conjugation=='基本形':
-        skeleton = [word.surface for word in wordlist]
-        if wordlist[-1].detail=='一段':
+    elif word_list[-1].pos=='動詞' and word_list[-1].conjugation=='基本形':
+        skeleton = [word.surface for word in word_list]
+        if word_list[-1].detail=='一段':
             skeleton[-1] = skeleton[-1][:-1]+'た日です。'
-        elif wordlist[-1].detail[1]=='五':
+        elif word_list[-1].detail[1]=='五':
             #五段活用
-            gyou = wordlist[-1].detail[0]
-            if wordlist[-1].detail=='ワ五う':
+            gyou = word_list[-1].detail[0]
+            if word_list[-1].detail=='ワ五う':
                 skeleton[-1] = skeleton[-1][:-1]+'うた日です。'
-            elif wordlist[-1].detail=='カ五いく' or gyou=='タ' or gyou=='ラ' or gyou=='ワ':
+            elif word_list[-1].detail=='カ五いく' or gyou=='タ' or gyou=='ラ' or gyou=='ワ':
                 skeleton[-1] = skeleton[-1][:-1]+'った日です。'
             elif gyou=='ガ' or gyou=='カ':
                 skeleton[-1] = skeleton[-1][:-1]+'いた日です。'
@@ -144,17 +142,17 @@ def summarizeToday(event, year=None):
 
     return event
 
-def randomTweet(param):
+def random_tweet(param):
     if param:
-        item, content = (param, wikipedia.getContentWiki(param))
+        item, content = (param, wikipedia.get_content_wiki(param))
     else:
-        item, content = wikipedia.getRandomContentWiki()
+        item, content = wikipedia.get_random_content_wiki()
     return Template('「${item}」 ${url} ${summary}' ).substitute({
         'item':item,
-        'url':wikipedia.getArticleUrl(item),
-        'summary':summarize(wikipedia.stripWikiNotation(content))})
+        'url':wikipedia.get_article_url(item),
+        'summary':summarize(wikipedia.strip_wiki_notation(content))})
 
-def midnightTweet(param):
+def midnight_tweet(param):
     if param and '/' in param:
         splitted = param.split('/')
         month = splitted[0]
@@ -164,13 +162,13 @@ def midnightTweet(param):
         month = str(now.month)
         day = str(now.day)
     month_day_str = month+'月'+day+'日'
-    content = wikipedia.getContentWiki('Wikipedia:今日は何の日_'+month+'月')
+    content = wikipedia.get_content_wiki('Wikipedia:今日は何の日_'+month+'月')
     content = content[re.search(r'^==\s*\[\['+month_day_str+'\]\]\s*==$', content, re.MULTILINE).end():]
-    nextHeader = re.search(r'^==[^=]', content, re.MULTILINE)
-    if nextHeader:
-        content = content[:nextHeader.start()]
+    next_header = re.search(r'^==[^=]', content, re.MULTILINE)
+    if next_header:
+        content = content[:next_header.start()]
     items = re.findall(r'^\*.*$', content, re.MULTILINE)
-    choice = wikipedia.stripWikiNotation(items[random.randint(0, len(items)-1) if param and '#' not in param else int(param.split('#')[1])])
+    choice = wikipedia.strip_wiki_notation(items[random.randint(0, len(items)-1) if param and '#' not in param else int(param.split('#')[1])])
     year_match = re.search(r'(\(|（)([0-9０-９]*?年).*(\)|）)\s*$',choice)
     if year_match:
         year = year_match.group(2)
@@ -179,32 +177,32 @@ def midnightTweet(param):
         year = None
         event = choice
     
-    summary = summarizeToday(event, year)
+    summary = summarize_today(event, year)
     return Template('よるほー。明けて本日${date}は、${year}${summary} ${url}' ).substitute({
         'date':month_day_str,
         'year':year+'に' if year else '',
-        'url':wikipedia.getArticleUrl(month_day_str),
+        'url':wikipedia.get_article_url(month_day_str),
         'summary':summary})
 
-def noonTweet(param):
-    wikiLinkPattern = re.compile(r'\[\[(.*?)\]\]')
+def noon_tweet(param):
+    wiki_link_pattern = re.compile(r'\[\[(.*?)\]\]')
 
-    featuredWiki = wikipedia.getContentWiki('Wikipedia:秀逸な記事')
-    articles = wikiLinkPattern.findall(featuredWiki[featuredWiki.find('== 秀逸な記事 =='):featuredWiki.rfind('== 関連項目 ==')])
+    featured_wiki = wikipedia.get_content_wiki('Wikipedia:秀逸な記事')
+    articles = wiki_link_pattern.findall(featured_wiki[featured_wiki.find('== 秀逸な記事 =='):featured_wiki.rfind('== 関連項目 ==')])
     good_beginning = len(articles)
-    goodWiki = wikipedia.getContentWiki('Wikipedia:良質な記事/リスト')
-    articles.extend(wikiLinkPattern.findall(goodWiki[goodWiki.find('=== 総記 ==='):]))
+    good_wiki = wikipedia.get_content_wiki('Wikipedia:良質な記事/リスト')
+    articles.extend(wiki_link_pattern.findall(good_wiki[good_wiki.find('=== 総記 ==='):]))
     if param:
         i = int(param.split('#')[1])
     else:
         i = random.randint(0, len(articles)-1)
 
     item = articles[i]
-    return Template('お昼ですよー。${featuredOrGood}な記事を紹介しますね。「${item}」 ${url} ${summary}').substitute({
-        'featuredOrGood': '秀逸' if i<good_beginning else '良質',
+    return Template('お昼ですよー。${featured_or_good}な記事を紹介しますね。「${item}」 ${url} ${summary}').substitute({
+        'featured_or_good': '秀逸' if i<good_beginning else '良質',
         'item': item,
-        'url': wikipedia.getArticleUrl(item),
-        'summary': summarize(wikipedia.stripWikiNotation(wikipedia.getContentWiki(item)))})
+        'url': wikipedia.get_article_url(item),
+        'summary': summarize(wikipedia.strip_wiki_notation(wikipedia.get_content_wiki(item)))})
         
 if __name__=="__main__":
     main()
