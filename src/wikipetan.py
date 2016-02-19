@@ -168,7 +168,7 @@ def midnight_tweet(param):
     if next_header:
         content = content[:next_header.start()]
     items = re.findall(r'^\*.*$', content, re.MULTILINE)
-    choice = wikipedia.strip_wiki_notation(items[random.randint(0, len(items)-1) if param and '#' not in param else int(param.split('#')[1])])
+    choice = wikipedia.strip_wiki_notation(items[random.randint(0, len(items)-1) if not param or '#' not in param else int(param.split('#')[1])])
     year_match = re.search(r'(\(|（)([0-9０-９]*?年).*(\)|）)\s*$',choice)
     if year_match:
         year = year_match.group(2)
