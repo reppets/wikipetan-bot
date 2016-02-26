@@ -4,6 +4,7 @@ from urllib.parse import quote,unquote
 from xml.parsers import expat
 
 _HTML_TAG_PATTERN = re.compile(r'<.*?>')
+_HTML_SINGLE_REF_TAG_PATTERN = re.compile(r'<[Rr][Ee][Ff][^/>]*/>')
 _HTML_REF_TAG_PATTERN = re.compile(r'<[Rr][Ee][Ff](\s+[^>]*|\s*)[^/]?>.*?</[Rr][Ee][Ff]\s*>',re.MULTILINE)
 _HTML_GALLERY_TAG_PATTERN = re.compile(r'<[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>.*?</[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>',re.MULTILINE)
 _LINE_HEAD_PATTERN = re.compile(r'^(:| |----+|\*(\*|#)*|#(\*|#)*|;+|=[^=]+=|==[^=]+==|===[^=]+===|====[^=]+====)',re.MULTILINE)
@@ -53,6 +54,7 @@ def strip_wiki_notation(data):
     return tmp
 
 def _strip_html_tags(data):
+    data = _HTML_SINGLE_REF_TAG_PATTERN.sub('', data)
     data = _HTML_REF_TAG_PATTERN.sub('', data)
     data = _HTML_GALLERY_TAG_PATTERN.sub('', data)
     return _HTML_TAG_PATTERN.sub('', data)    #簡易タグ除去
