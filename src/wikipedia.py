@@ -17,6 +17,7 @@ _OUTER_LINK_ALIAS_PATTERN = re.compile(r'\[\S*?[ \t]+(.*?)\]')
 _TEMPLATE_LANG_PATTERN = re.compile(r'\{\{\s*([Rr]tl-)?[Ll]ang\s*\|[^|]+\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
 _TEMPLATE_LANG_LABEL_PATTERN = re.compile(r'\{\{\s*([Ll]ang-[^|]+|[Aa]r|[Cc]s|[Dd]e|[Ee]l|[Ee]n|[Ee]s|[Ff]r|[Hh]u|[Ii]t|[Kk]o|[Ll]a|[Mm]y|[Nn]l|[Pp]t|[Rr]u|[Zz]h(-tw)?|[Ss]namei?)\s*\|(([^\{]|\{[^\{])*?)([^\{]\{)?\}\}',re.MULTILINE)
 _TEMPLATE_YOMIGANA_PATTERN = re.compile(r'\{\{\s*読み仮名\s*\|([^|]*)\|[^}]*\}\}')
+_TEMPLATE_KARI_LINK_PATTERN = re.compile(r'\{\{\s*仮リンク\s*\|([^|]*)\|[^}]*\}\}')
 _TEMPLATE_PATTERN = re.compile(r'\{\{([^\{]|\{[^\{])*?([^\{]\{)?\}\}',re.MULTILINE)
 _TABLE_PATTERN = re.compile(r'^\{\|.*?^\|\}',re.MULTILINE|re.DOTALL)
 _BOLD_PATTERN = re.compile(r"'''(.+?)'''")
@@ -80,6 +81,7 @@ def _strip_template(data):
     stripped = _TEMPLATE_LANG_PATTERN.sub(r'\2', data)
     stripped = _TEMPLATE_LANG_LABEL_PATTERN.sub(r'\3', stripped)
     stripped = _TEMPLATE_YOMIGANA_PATTERN.sub(r'\1', stripped)
+    stripped = _TEMPLATE_KARI_LINK_PATTERN.sub(r'\1', stripped)
     while True:
         raw = stripped
         stripped = _TEMPLATE_PATTERN.sub('', raw)
