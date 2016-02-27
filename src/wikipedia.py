@@ -19,7 +19,7 @@ _TEMPLATE_LANG_LABEL_PATTERN = re.compile(r'\{\{\s*([Ll]ang-[^|]+|[Aa]r|[Cc]s|[D
 _TEMPLATE_YOMIGANA_PATTERN = re.compile(r'\{\{\s*読み仮名\s*\|([^|]*)\|[^}]*\}\}')
 _TEMPLATE_KARI_LINK_PATTERN = re.compile(r'\{\{\s*仮リンク\s*\|([^|]*)\|[^}]*\}\}')
 _TEMPLATE_PATTERN = re.compile(r'\{\{([^\{]|\{[^\{])*?([^\{]\{)?\}\}',re.MULTILINE)
-_TABLE_PATTERN = re.compile(r'^\{\|.*?^\|\}',re.MULTILINE|re.DOTALL)
+_TABLE_PATTERN = re.compile(r'\{\|(?!.*\{\|).*?\|\}',re.MULTILINE|re.DOTALL)
 _BOLD_PATTERN = re.compile(r"'''(.+?)'''")
 _ITALIC_PATTERN = re.compile(r"''(.+?)''")
 _STRAY_BOLD_PATTERN = re.compile(r"'''")
@@ -90,7 +90,13 @@ def _strip_template(data):
     return stripped
 
 def _strip_table(data):
-    return _TABLE_PATTERN.sub('', data)
+    pre = data
+    while True:
+        stripped = _TABLE_PATTERN.sub('', pre)
+        if pre == stripped:
+            break
+        pre = stripped
+    return stripped
 
 def _strip_italic_bold(data):
     tmp = _BOLD_PATTERN.sub(r'\1', data)
