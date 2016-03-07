@@ -4,6 +4,7 @@ from urllib.parse import quote,unquote
 from xml.parsers import expat
 
 _HTML_TAG_PATTERN = re.compile(r'<.*?>')
+_HTML_TAG_MULTILINE_PATTERN = re.compile(r'<.*?>',re.MULTILINE|re.DOTALL)
 _HTML_SINGLE_REF_TAG_PATTERN = re.compile(r'<[Rr][Ee][Ff][^/>]*/>')
 _HTML_REF_TAG_PATTERN = re.compile(r'<[Rr][Ee][Ff](\s+[^>]*|\s*)[^/]?>.*?</[Rr][Ee][Ff]\s*>',re.MULTILINE)
 _HTML_GALLERY_TAG_PATTERN = re.compile(r'<[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>.*?</[Gg][Aa][Ll][Ll][Ee][Rr][Yy]\s*>',re.MULTILINE)
@@ -58,7 +59,8 @@ def _strip_html_tags(data):
     data = _HTML_SINGLE_REF_TAG_PATTERN.sub('', data)
     data = _HTML_REF_TAG_PATTERN.sub('', data)
     data = _HTML_GALLERY_TAG_PATTERN.sub('', data)
-    return _HTML_TAG_PATTERN.sub('', data)    #簡易タグ除去
+    data = _HTML_TAG_PATTERN.sub('', data)    #簡易タグ除去
+    return _HTML_TAG_MULTILINE_PATTERN.sub('', data)
 
 def _strip_head_pattern(data):
     return _LINE_HEAD_PATTERN.sub('', data)
